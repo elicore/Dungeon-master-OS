@@ -504,9 +504,6 @@ body[data-theme="text-adventure-dark"] .message.user::before {
   content: '> ';
   color: var(--accent-color);
 }
-body[data-theme="text-adventure-dark"] .tts-controls {
-  display: none;
-}
 body[data-theme="text-adventure-dark"] #chat-form {
   background: transparent;
   border: none;
@@ -1253,72 +1250,6 @@ main {
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
     flex-shrink: 0;
-}
-
-
-/* --- TTS Controls --- */
-.tts-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0 0.5rem;
-}
-
-.tts-button {
-    background: none;
-    border: 1px solid var(--border-color);
-    border-radius: 50%;
-    color: var(--text-secondary-color);
-    cursor: pointer;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s;
-}
-.tts-button:hover {
-    background-color: rgba(255,255,255,0.1);
-}
-.tts-button svg {
-    width: 20px;
-    height: 20px;
-}
-.pause-icon { display: none; }
-
-.sound-wave {
-    display: flex;
-    align-items: flex-end;
-    gap: 3px;
-    height: 16px;
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-.sound-wave.playing {
-    opacity: 1;
-}
-
-.sound-wave span {
-    width: 3px;
-    height: 100%;
-    background-color: var(--text-secondary-color);
-    animation: wave 1.2s infinite ease-in-out;
-    animation-play-state: paused;
-    transform-origin: bottom;
-}
-.sound-wave.playing span {
-    animation-play-state: running;
-}
-
-.sound-wave span:nth-child(1) { animation-delay: 0s; }
-.sound-wave span:nth-child(2) { animation-delay: 0.2s; }
-.sound-wave span:nth-child(3) { animation-delay: 0.4s; }
-.sound-wave span:nth-child(4) { animation-delay: 0.6s; }
-
-
-@keyframes wave {
-    0%, 100% { transform: scaleY(0.1); }
-    50% { transform: scaleY(1.0); }
 }
 
 

@@ -122,10 +122,8 @@ import {
   contextHeader,
 } from './ui';
 import {
-  stopTTS,
   addUserContext,
   deleteUserContext,
-  handleTTS,
   handleDieRoll,
   rollDice,
   updateLogbookData,
@@ -264,7 +262,6 @@ function showWelcomeModalIfNeeded() {
  * Starts a brand new chat session, guiding the user through the setup process.
  */
 async function startNewChat() {
-  stopTTS();
   closeSidebar();
   chatContainer.innerHTML = ''; // Clear the view immediately
 
@@ -344,7 +341,6 @@ function loadChat(id: string) {
   if (currentChatId === id && !document.body.classList.contains('sidebar-open')) {
     return;
   }
-  stopTTS();
   const session = getChatHistory().find(s => s.id === id);
   if (session) {
     setCurrentChatId(id);
@@ -575,7 +571,6 @@ async function handleFormSubmit(e: Event) {
     }
 
     if (currentSession.creationPhase) {
-      stopTTS();
       const isPassword = currentSession.creationPhase === 'quick_start_password' || currentSession.creationPhase === 'guided_password';
       const userMessage: Message = { sender: 'user', text: isPassword ? '********' : userInput, hidden: isPassword };
       if (!isPassword) appendMessage(userMessage);
@@ -711,7 +706,6 @@ async function handleFormSubmit(e: Event) {
       const easterEggMessage: Message = { sender: 'model', text: "The simulation flickers for a moment, and the world goes silent. A single line of plain text hangs in the void before you:\n\n'This world was built by Justin Brisson.'" };
       const messageContainer = appendMessage(easterEggMessage);
       messageContainer.querySelector('.message')?.classList.add('easter-egg');
-      messageContainer.querySelector('.tts-controls')?.remove();
       return;
     }
 
@@ -730,7 +724,6 @@ async function handleFormSubmit(e: Event) {
         if (settingsTabBtn) settingsTabBtn.click();
         return;
     }
-    stopTTS();
 
     const userMessage: Message = { sender: 'user', text: userInput };
     currentSession.messages.push(userMessage);
@@ -1063,20 +1056,6 @@ function setupEventListeners() {
 
   chatContainer.addEventListener('click', async (e) => {
     const target = e.target as HTMLElement;
-
-    // Handle TTS button clicks
-    const ttsButton = target.closest<HTMLButtonElement>('.tts-button');
-    if (ttsButton) {
-        const messageContainer = ttsButton.closest('.message-model-container');
-        if (messageContainer) {
-            const messageEl = messageContainer.querySelector('.message.model');
-            if (messageEl) {
-                // Pass the raw HTML to handleTTS, it will parse it
-                handleTTS(messageEl.innerHTML, ttsButton);
-            }
-        }
-        return; // Event handled
-    }
     
     const currentSession = getCurrentChat();
     if (!currentSession || isSending()) return;

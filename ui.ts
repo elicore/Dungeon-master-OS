@@ -23,7 +23,6 @@ export const overlay = document.getElementById('overlay') as HTMLElement;
 export const chatHistoryContainer = document.getElementById('chat-history-container') as HTMLElement;
 export const pinnedChatsList = document.getElementById('pinned-chats-list') as HTMLUListElement;
 export const recentChatsList = document.getElementById('recent-chats-list') as HTMLUListElement;
-const ttsTemplate = document.getElementById('tts-controls-template') as HTMLTemplateElement;
 export const exportAllBtn = document.getElementById('export-all-btn') as HTMLButtonElement;
 export const importAllBtn = document.getElementById('import-all-btn') as HTMLButtonElement;
 export const importAllFileInput = document.getElementById('import-all-file-input') as HTMLInputElement;
@@ -268,10 +267,6 @@ export function appendMessage(message: Message, container: HTMLElement = chatCon
     messageElement.innerHTML = message.text;
     msgContainer.appendChild(messageElement);
 
-    if (message.sender === 'model' && message.text && container === chatContainer) {
-      const ttsControls = ttsTemplate?.content.cloneNode(true) as DocumentFragment;
-      if (ttsControls) msgContainer.appendChild(ttsControls);
-    }
     container.appendChild(msgContainer);
   }
 

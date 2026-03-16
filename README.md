@@ -127,7 +127,6 @@ Your adventure is automatically chronicled in a detailed in‑game logbook, whic
 Leverage the power of generative AI to enrich your experience:
 
 · Character Portrait Generation: Create a unique, high‑quality portrait of your character based on their in‑game description and equipment using Imagen.
-· Text‑to‑Speech (TTS): Have the Dungeon Master's narration and dialogue read aloud for a more immersive experience.
 · On‑Demand Summaries: Instantly get updated summaries for your inventory, quests, and more without breaking the flow of the game.
 · Multimodal RAG Context: Upload documents (including PDFs), images, audio, or video files. The AI will extract the relevant information and add it to its working context, allowing you to ground your adventure in your own custom content.
 
