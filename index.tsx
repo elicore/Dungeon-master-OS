@@ -5,6 +5,11 @@
  */
 // Fix: Improved the 'generateContent' call for creating quick start characters by adding a 'responseSchema' to ensure valid JSON output.
 import { Type, GenerateContentResponse } from '@google/genai';
+import { inject } from '@vercel/analytics';
+
+// Initialize Vercel Analytics
+inject();
+
 import {
   initDB,
   loadChatHistoryFromDB,
