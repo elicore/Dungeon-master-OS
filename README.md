@@ -5,6 +5,9 @@ YouTube tutorial: https://youtu.be/2TAoK5txIts
 ---
 YouTube overview: https://youtu.be/f0dCEIK2l0Q
 
+### 🏰 Join the Community
+Welcome to the DM OS community! Join our Discord to share your adventures, get help, and stay updated: [Discord Server](https://discord.gg/JNbvzAuuY)
+
 
 # ⚠️ IMPORTANT: API KEY REQUIRED FOR INITIAL SETUP
 To use DM OS, you must have a Google AI Studio API key.
