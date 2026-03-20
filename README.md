@@ -6,6 +6,9 @@ Play Dungeon Master OS directly in your browser at the official website: [dungeo
 > [!CAUTION]
 > **Known Bug:** The website currently crashes on start if accessed from a non-Chrome-based browser. Please use Google Chrome, Brave, or Microsoft Edge for the best experience.
 
+> [!NOTE]
+> **Privacy & Analytics:** This website uses Vercel Analytics to monitor basic traffic patterns. We do not harvest, sell, or share any personal user information. All analytics data is automatically deleted every 24 hours in accordance with Vercel Hobby tier policies.
+
 YouTube tutorial: https://youtu.be/2TAoK5txIts
 
 ---
