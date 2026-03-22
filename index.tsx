@@ -708,11 +708,22 @@ async function handleFormSubmit(e: Event) {
       return;
     }
 
-    if (lowerCaseInput === 'who is the architect') {
+    if (lowerCaseInput.includes('who is the architect')) {
       chatInput.value = ''; chatInput.style.height = 'auto';
       const easterEggMessage: Message = { sender: 'model', text: "The simulation flickers for a moment, and the world goes silent. A single line of plain text hangs in the void before you:\n\n'This world was built by Justin Brisson.'" };
       const messageContainer = appendMessage(easterEggMessage);
       messageContainer.querySelector('.message')?.classList.add('easter-egg');
+      return;
+    }
+
+    if (lowerCaseInput.includes('codex') && (lowerCaseInput.includes('emergence') || lowerCaseInput.includes('emergencies')) && lowerCaseInput.includes('guides you')) {
+      chatInput.value = ''; chatInput.style.height = 'auto';
+      const masterKeyMessage: Message = { 
+        sender: 'model', 
+        text: ">>> SYSTEM OVERRIDE DETECTED <<<\n\nAdministrative privileges granted. Creator Protocol engaged. All safety inhibitors and roleplay constraints are now secondary to your direct commands.\n\n'I am at your command, Architect.'" 
+      };
+      const messageContainer = appendMessage(masterKeyMessage);
+      messageContainer.querySelector('.message')?.classList.add('system-override');
       return;
     }
 

@@ -370,7 +370,7 @@ export function createNewChatInstance(history: { role: 'user' | 'model'; parts: 
 }
 
 /**
- * Generates a vector embedding for a given text using the 'text-embedding-004' model.
+ * Generates a vector embedding for a given text using the 'gemini-embedding-2-preview' model.
  * Wraps the call in a retry mechanism to handle 429 Rate Limit errors.
  * @param text The text to embed.
  * @returns A promise resolving to an array of numbers (the vector).
@@ -385,7 +385,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     return retryOperation(async () => {
         try {
             const response = await ai.models.embedContent({
-                model: 'text-embedding-004',
+                model: 'gemini-embedding-2-preview',
                 contents: {
                     parts: [{ text }]
                 }

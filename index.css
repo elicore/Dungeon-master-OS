@@ -1209,6 +1209,27 @@ main {
   max-width: 600px;
 }
 
+.message.system-override {
+  font-family: var(--mono-font);
+  color: #00ff00;
+  background-color: #000;
+  border: 2px solid #00ff00;
+  text-shadow: 0 0 5px #00ff00;
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+  text-align: center;
+  align-self: center;
+  width: 100%;
+  max-width: 600px;
+  padding: 20px;
+  animation: flicker 0.1s infinite;
+}
+
+@keyframes flicker {
+  0% { opacity: 0.9; }
+  50% { opacity: 1; }
+  100% { opacity: 0.9; }
+}
+
 .message.system-roll {
   align-self: center;
   background-color: var(--background-color);
