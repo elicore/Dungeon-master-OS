@@ -32,6 +32,35 @@ export interface AbilityScore {
   modifier: string;
 }
 
+export interface StatBlock {
+  primaryStats: Record<string, number | AbilityScore>;
+  resources: Record<string, { current: number; max: number }>;
+  derivedStats: Record<string, number | string>;
+  tags: Record<string, string>;
+}
+
+export interface Ruleset {
+  id: string;
+  name: string;
+  description: string;
+  statBlock: {
+    primaryStats: string[];
+    resources: string[];
+    derivedStats: string[];
+  };
+  rollMechanic: {
+    type: string;
+    description: string;
+  };
+  promptFragments: {
+    systemName: string;
+    damageLanguage: string;
+    healthLanguage: string;
+    actionLanguage: string;
+    mechanicsReference?: string;
+  };
+}
+
 export interface Skill {
   name: string;
   proficient: boolean;
@@ -44,23 +73,14 @@ export interface Achievement {
 
 export interface CharacterSheetData {
   name: string;
-  race: string;
-  class: string;
-  level: number;
-  abilityScores: {
-    STR: AbilityScore;
-    DEX: AbilityScore;
-    CON: AbilityScore;
-    INT: AbilityScore;
-    WIS: AbilityScore;
-    CHA: AbilityScore;
+  identity: {
+    race?: string;
+    class?: string;
+    level?: number;
+    background?: string;
+    [key: string]: any;
   };
-  armorClass: number;
-  hitPoints: {
-    current: number;
-    max: number;
-  };
-  speed: string;
+  stats: StatBlock;
   skills: Skill[];
   featuresAndTraits: string[];
   conditions?: string[];
@@ -151,6 +171,7 @@ export interface ChatSession {
   activeEncounters?: ActiveEncounters[]; // list of active combat entities
   deltaSHistory?: number[];
   currentSpatialGraph?: Array<{ from: string; to: string; distance: number }>;
+  rulesetId?: string;
 }
 
 export interface DMPersona {

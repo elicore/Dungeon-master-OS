@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { marked } from 'marked';
-import { getChatHistory, getCurrentChat, getUISettings, dbSet } from './state';
+import { getChatHistory, getCurrentChat, getUISettings, dbSet, getCurrentRuleset } from './state';
 import type { Message, ChatSession, CharacterSheetData, Achievement, NPCState } from './types';
 import { dmPersonas, resetAI } from './gemini';
 
@@ -85,6 +85,7 @@ export const modelSelect = document.getElementById('setting-model') as HTMLSelec
 export const modelCustomInput = document.getElementById('setting-model-custom') as HTMLInputElement;
 export const systemVersionSelect = document.getElementById('setting-system-version') as HTMLSelectElement;
 export const engineVariantSelect = document.getElementById('setting-engine-variant') as HTMLSelectElement;
+export const rulesetSelect = document.getElementById('setting-ruleset') as HTMLSelectElement;
 export const apiKeyInput = document.getElementById('setting-api-key') as HTMLInputElement;
 export const localAiUrlInput = document.getElementById('setting-local-ai-url') as HTMLInputElement;
 export const localAiModelInput = document.getElementById('setting-local-ai-model') as HTMLInputElement;
@@ -156,6 +157,10 @@ export function applyUISettings() {
   }
   if (engineVariantSelect) {
     engineVariantSelect.value = uiSettings.engineVariant || 'pro';
+  }
+  if (rulesetSelect) {
+    const currentChat = getCurrentChat();
+    rulesetSelect.value = currentChat?.rulesetId || 'dnd-5e';
   }
   if (apiKeyInput) {
       apiKeyInput.value = uiSettings.apiKey || '';
@@ -300,13 +305,18 @@ export function renderQuickStartChoices(characters: CharacterSheetData[]) {
   const choiceHtml = `
       <p>Choose your adventurer:</p>
       <div class="quick-start-grid">
-        ${characters.map((char, index) => `
+        ${characters.map((char, index) => {
+          const race = char.identity?.race || 'Unknown Race';
+          const charClass = char.identity?.class || 'Unknown Class';
+          const backstory = char.identity?.background || 'No backstory available.';
+          return `
           <div class="quick-start-card" data-char-index="${index}">
             <h3 class="quick-start-name">${char.name}</h3>
-            <p class="quick-start-race-class">${char.race} ${char.class}</p>
-            <p class="quick-start-desc">${char.backstory}</p>
+            <p class="quick-start-race-class">${race} ${charClass}</p>
+            <p class="quick-start-desc">${backstory}</p>
           </div>
-        `).join('')}
+          `;
+        }).join('')}
       </div>
     `;
 
@@ -366,8 +376,32 @@ export function renderSetupChoices() {
 export function renderCharacterSheet(data: CharacterSheetData) {
   if (!characterSheetDisplay) return;
 
-  const abilityScoresMd = Object.entries(data.abilityScores || {})
-    .map(([name, values]) => `| ${name} | ${values.score || 10} | ${values.modifier || '+0'} |`)
+  const ruleset = getCurrentRuleset();
+  const identity = data.identity || {};
+  const stats = data.stats || { primaryStats: {}, resources: {}, derivedStats: {}, tags: {} };
+
+  const identityLine = [
+    (identity as any).race,
+    (identity as any).class,
+    (identity as any).level ? `Level ${(identity as any).level}` : null,
+    (identity as any).background
+  ].filter(Boolean).join(' ');
+
+  const primaryStatsMd = Object.entries(stats.primaryStats || {})
+    .map(([name, val]) => {
+      if (typeof val === 'object' && val !== null) {
+        return `| ${name} | ${val.score || 10} | ${val.modifier || '+0'} |`;
+      }
+      return `| ${name} | ${val} | - |`;
+    })
+    .join('\n');
+
+  const resourcesMd = Object.entries(stats.resources || {})
+    .map(([name, res]) => `- **${name}:** ${res.current} / ${res.max}`)
+    .join('\n');
+
+  const derivedStatsMd = Object.entries(stats.derivedStats || {})
+    .map(([name, val]) => `- **${name}:** ${val}`)
     .join('\n');
 
   const skillsMd = (data.skills || [])
@@ -380,24 +414,25 @@ export function renderCharacterSheet(data: CharacterSheetData) {
 
   const markdown = `
 # ${data.name || 'Unnamed Hero'}
-**${data.race || 'Race'} ${data.class || 'Class'} | Level ${data.level || 1}**
+**${identityLine || 'Unknown Identity'}**
 
 ---
 
-### Core Stats
-| Ability | Score | Mod |
+### Characteristics
+| Stat | Value | Mod |
 | :--- | :--- | :--- |
-${abilityScoresMd}
+${primaryStatsMd}
 
-### Combat
-- **Armor Class:** ${data.armorClass || 10}
-- **Hit Points:** ${data.hitPoints?.current ?? 10} / ${data.hitPoints?.max ?? 10}
-- **Speed:** ${data.speed || '30ft'}
+### Resources
+${resourcesMd}
+
+### Derived Stats
+${derivedStatsMd}
 
 ### Skills
 ${skillsMd}
 
-### Features & Traits
+### Special Traits
 ${featuresMd}
   `;
 

@@ -13,7 +13,8 @@ import {
   saveUserContextToDB,
   getChatHistory,
   dbSet,
-  getUISettings
+  getUISettings,
+  getCurrentRuleset
 } from './state';
 import {
   updateSheetBtn,
@@ -142,6 +143,9 @@ async function generateLogbookSection(section: 'sheet' | 'inventory' | 'quests' 
   const session = getCurrentChat();
   if (!session) return;
 
+  const ruleset = getCurrentRuleset();
+  const systemName = ruleset.promptFragments.systemName || 'D&D 5e';
+
   // Construct a history string for context
   const historyText = session.messages
     .filter(m => !m.hidden && m.sender !== 'error' && m.sender !== 'system')
@@ -154,30 +158,31 @@ async function generateLogbookSection(section: 'sheet' | 'inventory' | 'quests' 
 
   switch (section) {
     case 'sheet':
-      prompt = `Based on the following chat history, generate a JSON object representing the user's character sheet (D&D 5e). Fill in as much detail as possible from context. If unknown, use defaults.
+      prompt = `Based on the following chat history, generate a JSON object representing the user's character sheet for the ${systemName} system. Fill in as much detail as possible from context. If unknown, use defaults.
       History:
       ${historyText}`;
       schema = {
         type: Type.OBJECT,
         properties: {
           name: { type: Type.STRING },
-          race: { type: Type.STRING },
-          class: { type: Type.STRING },
-          level: { type: Type.INTEGER },
-          abilityScores: {
+          identity: {
             type: Type.OBJECT,
             properties: {
-              STR: { type: Type.OBJECT, properties: { score: { type: Type.INTEGER }, modifier: { type: Type.STRING } } },
-              DEX: { type: Type.OBJECT, properties: { score: { type: Type.INTEGER }, modifier: { type: Type.STRING } } },
-              CON: { type: Type.OBJECT, properties: { score: { type: Type.INTEGER }, modifier: { type: Type.STRING } } },
-              INT: { type: Type.OBJECT, properties: { score: { type: Type.INTEGER }, modifier: { type: Type.STRING } } },
-              WIS: { type: Type.OBJECT, properties: { score: { type: Type.INTEGER }, modifier: { type: Type.STRING } } },
-              CHA: { type: Type.OBJECT, properties: { score: { type: Type.INTEGER }, modifier: { type: Type.STRING } } }
+              race: { type: Type.STRING },
+              class: { type: Type.STRING },
+              level: { type: Type.INTEGER },
+              background: { type: Type.STRING }
             }
           },
-          armorClass: { type: Type.INTEGER },
-          hitPoints: { type: Type.OBJECT, properties: { current: { type: Type.INTEGER }, max: { type: Type.INTEGER } } },
-          speed: { type: Type.STRING },
+          stats: {
+            type: Type.OBJECT,
+            properties: {
+              primaryStats: { type: Type.OBJECT, description: `The primary characteristics for ${systemName} (e.g. ${ruleset.statBlock.primaryStats.join(', ')})` },
+              resources: { type: Type.OBJECT, description: `The trackable resources for ${systemName} (e.g. ${ruleset.statBlock.resources.join(', ')})` },
+              derivedStats: { type: Type.OBJECT, description: `The derived stats for ${systemName} (e.g. ${ruleset.statBlock.derivedStats.join(', ')})` },
+              tags: { type: Type.OBJECT }
+            }
+          },
           skills: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, proficient: { type: Type.BOOLEAN } } } },
           featuresAndTraits: { type: Type.ARRAY, items: { type: Type.STRING } }
         }
@@ -293,11 +298,17 @@ export async function generateCharacterImage() {
     try {
         // 1. Generate a prompt for the image
         let description = "";
+        const ruleset = getCurrentRuleset();
+        const systemName = ruleset.promptFragments.systemName || 'D&D 5e';
+
         if (typeof session.characterSheet === 'object' && session.characterSheet) {
             const s = session.characterSheet;
-            description = `A ${s.race} ${s.class}, level ${s.level}. Features: ${s.featuresAndTraits?.slice(0,3).join(', ')}.`;
+            const race = s.identity?.race || "unknown race";
+            const charClass = s.identity?.class || "unknown class";
+            const level = s.identity?.level || 1;
+            description = `A ${race} ${charClass}, level ${level} in the ${systemName} setting. Features: ${s.featuresAndTraits?.slice(0,3).join(', ')}.`;
         } else {
-            description = "A D&D adventurer.";
+            description = `A character from the ${systemName} RPG system.`;
         }
 
         const promptResponse = await retryOperation(() => ai.models.generateContent({
@@ -666,6 +677,9 @@ export async function pruneAndSummarizeHistory() {
       .join('\n');
 
     if (archiveText.trim()) {
+        const ruleset = getCurrentRuleset();
+        const systemName = ruleset.promptFragments.systemName || 'D&D 5e';
+        
         // 2. Commit to Semantic Memory (RAG) before deleting
         // This ensures the information is still retrievable even if not in the active window.
         await commitToSemanticMemory(`Archived History Chunk (${new Date().toLocaleDateString()}): \n${archiveText}`, 0.4);
@@ -673,7 +687,7 @@ export async function pruneAndSummarizeHistory() {
         // 3. Generate a summary update using a fast model
         const currentSummary = session.storySummary || "The adventure has just begun.";
         const prompt = `
-          You are a specialized story summarizer for a D&D campaign. 
+          You are a specialized story summarizer for a ${systemName} campaign. 
           Your task is to integrate new events into an existing "Story Summary".
           
           EXISTING SUMMARY:
@@ -896,8 +910,10 @@ export function interceptAndValidateModelResponse(
           throw new Error('Cannot modify player: character sheet missing or invalid.');
         }
         if (stat === 'hp') {
-          const currentHp = session.characterSheet.hitPoints?.current;
-          const maxHp = session.characterSheet.hitPoints?.max;
+          const cs = session.characterSheet as CharacterSheetData;
+          const hp = cs.stats?.resources?.hitPoints as { current: number; max: number } | undefined;
+          const currentHp = hp?.current;
+          const maxHp = hp?.max;
           if (typeof currentHp !== 'number' || typeof maxHp !== 'number') {
             throw new Error('Player HP data missing.');
           }
@@ -968,9 +984,12 @@ export function interceptAndValidateModelResponse(
       if (targetId === 'player') {
         if (stat === 'hp') {
           const cs = session.characterSheet as CharacterSheetData;
-          if (operator === '+') cs.hitPoints.current += value;
-          else if (operator === '-') cs.hitPoints.current -= value;
-          else if (operator === '=') cs.hitPoints.current = value;
+          const hp = cs.stats?.resources?.hitPoints as { current: number; max: number } | undefined;
+          if (hp) {
+            if (operator === '+') hp.current += value;
+            else if (operator === '-') hp.current -= value;
+            else if (operator === '=') hp.current = value;
+          }
         } else if (stat === 'condition') {
           const cs = session.characterSheet as CharacterSheetData;
           if (!cs.conditions) cs.conditions = [];

@@ -34,6 +34,7 @@ import {
   dbSet,
   getChroniclerChat,
   setChroniclerChat,
+  getCurrentRuleset,
 } from './state';
 import {
   chatContainer,
@@ -91,6 +92,7 @@ import {
   modelCustomInput,
   systemVersionSelect,
   engineVariantSelect,
+  rulesetSelect,
   apiKeyInput,
   localAiUrlInput,
   localAiModelInput,
@@ -174,24 +176,24 @@ const quickStartCharacterSchema = {
   type: Type.OBJECT,
   properties: {
     name: { type: Type.STRING },
-    race: { type: Type.STRING },
-    class: { type: Type.STRING },
-    level: { type: Type.INTEGER },
-    backstory: { type: Type.STRING },
-    abilityScores: {
+    identity: {
       type: Type.OBJECT,
       properties: {
-        STR: { type: Type.OBJECT, properties: { score: { type: Type.INTEGER }, modifier: { type: Type.STRING } } },
-        DEX: { type: Type.OBJECT, properties: { score: { type: Type.INTEGER }, modifier: { type: Type.STRING } } },
-        CON: { type: Type.OBJECT, properties: { score: { type: Type.INTEGER }, modifier: { type: Type.STRING } } },
-        INT: { type: Type.OBJECT, properties: { score: { type: Type.INTEGER }, modifier: { type: Type.STRING } } },
-        WIS: { type: Type.OBJECT, properties: { score: { type: Type.INTEGER }, modifier: { type: Type.STRING } } },
-        CHA: { type: Type.OBJECT, properties: { score: { type: Type.INTEGER }, modifier: { type: Type.STRING } } }
+        race: { type: Type.STRING },
+        class: { type: Type.STRING },
+        level: { type: Type.INTEGER },
+        background: { type: Type.STRING }
       }
     },
-    armorClass: { type: Type.INTEGER },
-    hitPoints: { type: Type.OBJECT, properties: { current: { type: Type.INTEGER }, max: { type: Type.INTEGER } } },
-    speed: { type: Type.STRING },
+    stats: {
+      type: Type.OBJECT,
+      properties: {
+        primaryStats: { type: Type.OBJECT },
+        resources: { type: Type.OBJECT },
+        derivedStats: { type: Type.OBJECT },
+        tags: { type: Type.OBJECT }
+      }
+    },
     skills: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, proficient: { type: Type.BOOLEAN } } } },
     featuresAndTraits: { type: Type.ARRAY, items: { type: Type.STRING } }
   }
@@ -997,23 +999,26 @@ async function handleFileUpload(event: Event) {
       return response.text || '';
     };
 
+    const ruleset = getCurrentRuleset();
+    const systemName = ruleset.promptFragments.systemName || 'D&D 5e';
+
     if (file.type.startsWith('text/')) {
       extractedText = await file.text();
       fileTypeForPrompt = 'text file';
     } else if (file.type.startsWith('image/')) {
-      promptText = 'Concisely describe the contents and style of this image. This will be used as RAG context for a D&D game.';
+      promptText = `Concisely describe the contents and style of this image. This will be used as RAG context for a ${systemName} game.`;
       extractedText = await processFile(promptText);
       fileTypeForPrompt = 'image';
     } else if (file.type.startsWith('audio/')) {
-      promptText = 'Transcribe the audio from this file. This will be used as RAG context for a D&D game.';
+      promptText = `Transcribe the audio from this file. This will be used as RAG context for a ${systemName} game.`;
       extractedText = await processFile(promptText);
       fileTypeForPrompt = 'audio file';
     } else if (file.type.startsWith('video/')) {
-      promptText = 'Provide a concise summary of the content of this video. This will be used as RAG context for a D&D game.';
+      promptText = `Provide a concise summary of the content of this video. This will be used as RAG context for a ${systemName} game.`;
       extractedText = await processFile(promptText);
       fileTypeForPrompt = 'video file';
     } else if (file.type === 'application/pdf') {
-      promptText = 'Extract the full text content from this document. This will be used as RAG context for a D&D game.';
+      promptText = `Extract the full text content from this document. This will be used as RAG context for a ${systemName} game.`;
       extractedText = await processFile(promptText);
       fileTypeForPrompt = 'document';
     } else {
@@ -1090,7 +1095,9 @@ function setupEventListeners() {
         quickStartCard.classList.remove('disabled');
         quickStartCard.classList.add('selected');
 
-        const userMessage: Message = { sender: 'user', text: `I choose to play as ${selectedChar.name}, the ${selectedChar.race} ${selectedChar.class}.` };
+        const race = selectedChar.identity?.race || 'Unknown Race';
+        const charClass = selectedChar.identity?.class || 'Unknown Class';
+        const userMessage: Message = { sender: 'user', text: `I choose to play as ${selectedChar.name}, the ${race} ${charClass}.` };
         appendMessage(userMessage);
         currentSession.messages.push(userMessage);
 
@@ -1472,6 +1479,18 @@ function setupEventListeners() {
       const currentChat = getCurrentChat();
       if (currentChat) {
           loadChat(currentChat.id);
+      }
+    });
+  }
+
+  if (rulesetSelect) {
+    rulesetSelect.addEventListener('change', () => {
+      const newRulesetId = rulesetSelect.value;
+      const currentChat = getCurrentChat();
+      if (currentChat) {
+        currentChat.rulesetId = newRulesetId;
+        saveChatHistoryToDB();
+        loadChat(currentChat.id);
       }
     });
   }

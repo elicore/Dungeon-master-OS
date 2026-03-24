@@ -17,7 +17,9 @@ import {
   NPCState,
   GameSettings,
   ActiveEncounters,
+  Ruleset,
 } from './types';
+import { RULESETS, DEFAULT_RULESET_ID } from './rulesets';
 
 // =================================================================================
 // STATE
@@ -78,6 +80,12 @@ export const setCurrentPersonaId = (id: string) => {
 export const getUISettings = () => uiSettings;
 export const setUISettings = (settings: UISettings) => {
   uiSettings = settings;
+};
+
+export const getCurrentRuleset = (): Ruleset => {
+  const session = getCurrentChat();
+  const rulesetId = session?.rulesetId || DEFAULT_RULESET_ID;
+  return RULESETS[rulesetId] || RULESETS[DEFAULT_RULESET_ID];
 };
 
 // =================================================================================
@@ -329,6 +337,9 @@ export function migrateAndValidateSession(session: any): ChatSession {
   } else {
     newSession.activeEncounters = [];
   }
+
+  // Ruleset
+  newSession.rulesetId = typeof session.rulesetId === 'string' ? session.rulesetId : DEFAULT_RULESET_ID;
 
   return newSession as ChatSession;
 }
