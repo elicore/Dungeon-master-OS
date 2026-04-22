@@ -377,7 +377,13 @@ async function startNewChat() {
     
     // Handle Rate Limit (429) specific message
     if (error.status === 429 || (error.message && error.message.includes('429')) || errorMessage.includes('429')) {
-        errorMessage = "⚠️ System Overload (429): The 'Gemini 3.0 Pro' model is currently busy. Please go to Settings (in Logbook) and switch the AI Model to 'Gemini 2.5 Flash' for a smoother experience.";
+        const activeModel = getUISettings().activeModel;
+        const modelDisplay = activeModel.includes('pro') ? 'Gemini Pro' : (activeModel.includes('flash') ? 'Gemini Flash' : activeModel);
+        if (activeModel.includes('pro')) {
+            errorMessage = `⚠️ System Overload (429): The '${modelDisplay}' model is currently busy. Please go to Settings (in Logbook) and switch the AI Model to 'Gemini 2.5 Flash' for a smoother experience.`;
+        } else {
+            errorMessage = `⚠️ System Overload (429): The '${modelDisplay}' model is hitting a rate limit. Please wait a moment before trying again, or check your API quota in Google AI Studio.`;
+        }
     }
     
     if (errorMessage.includes('API Key') || errorMessage.includes('API key') || errorMessage.includes('403') || error.status === 403 || error.code === 403) {
@@ -967,6 +973,8 @@ async function handleFormSubmit(e: Event) {
       // --- WFGY AUDIT TRIGGER ---
       (async () => {
         try {
+          // Stagger background tasks to avoid hitting the rate limit immediately after the main turn
+          await new Promise(resolve => setTimeout(resolve, 1500));
           const userEmb = await generateEmbedding(userInput);
           const dmEmb = await generateEmbedding(finalMessage.text);
           await runWFGYAudit(userEmb, dmEmb);
@@ -987,16 +995,22 @@ async function handleFormSubmit(e: Event) {
 
       if (isWorldTurn && getChroniclerChat()) {
         // This runs in the background and does not block the UI.
-        runChroniclerTurn(userInput).catch(err => {
-            console.error("Caught an error from the background chronicler turn:", err);
-        });
+        (async () => {
+             await new Promise(resolve => setTimeout(resolve, 3000));
+             runChroniclerTurn(userInput).catch(err => {
+                console.error("Caught an error from the background chronicler turn:", err);
+            });
+        })();
       }
 
       // --- MEMORY COMPRESSION TRIGGER ---
       // Periodically summarize old messages to keep the context window clean.
-      pruneAndSummarizeHistory().catch(err => {
-          console.error("Memory compression failed:", err);
-      });
+      (async () => {
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          pruneAndSummarizeHistory().catch(err => {
+              console.error("Memory compression failed:", err);
+          });
+      })();
 
     } catch (error: any) {
       console.error("Gemini API Error:", error);
@@ -1013,7 +1027,13 @@ async function handleFormSubmit(e: Event) {
       }
       // Handle Rate Limit (429) specific message
       if (error.status === 429 || (error.message && error.message.includes('429'))) {
-          errorMessage = "⚠️ System Overload (429): The 'Gemini 3.0 Pro' model is currently busy. Please go to Settings (in Logbook) and switch the AI Model to 'Gemini 2.5 Flash' for a smoother experience.";
+          const activeModel = getUISettings().activeModel;
+          const modelDisplay = activeModel.includes('pro') ? 'Gemini Pro' : (activeModel.includes('flash') ? 'Gemini Flash' : activeModel);
+          if (activeModel.includes('pro')) {
+              errorMessage = `⚠️ System Overload (429): The '${modelDisplay}' model is currently busy. Please go to Settings (in Logbook) and switch the AI Model to 'Gemini 2.5 Flash' for a smoother experience.`;
+          } else {
+              errorMessage = `⚠️ System Overload (429): The '${modelDisplay}' model is hitting a rate limit. Please wait a moment before trying again, or check your API quota in Google AI Studio.`;
+          }
       }
       appendMessage({ sender: 'error', text: errorMessage });
     }
