@@ -712,6 +712,8 @@ const themes = [
   { id: '8-bit-arcade', name: '8-Bit Dungeon', palette: ['#000', '#00ffff', '#ff00ff'] },
   { id: 'celestial', name: 'Celestial Void', palette: ['#100f1a', '#d8b8ff', '#d8d8e8'] },
   { id: 'celestial-oled', name: 'Celestial Void (OLED)', palette: ['#000000', '#d8b8ff', '#d8d8e8'] },
+  { id: 'celestial-motion', name: 'Celestial Void (Motion)', palette: ['#100f1a', '#d8b8ff', '#d8d8e8'] },
+  { id: 'celestial-oled-motion', name: 'Celestial Void OLED (Motion)', palette: ['#000000', '#d8b8ff', '#d8d8e8'] },
 ];
 
 export function renderThemeCards() {

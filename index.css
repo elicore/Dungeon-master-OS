@@ -15,6 +15,9 @@
   --danger-color: #e57373;
   --sidebar-width: 280px;
   --base-font-size: 16px;
+  --gx: 0px;
+  --gy: 0px;
+  --g-roll: 0deg;
 }
 
 /* --- THEME DEFINITIONS --- */
@@ -1021,6 +1024,34 @@ body[data-theme="celestial-oled"] {
   --accent-color: #d8b8ff;
   --accent-hover-color: #e8d0ff;
 }
+/* --- Celestial Motion --- */
+body[data-theme="celestial-motion"] {
+  --background-color: #100f1a;
+  --sidebar-color: #191829;
+  --text-color: #d8d8e8;
+  --text-secondary-color: #8c8ca0;
+  --primary-font: "Merriweather", serif;
+  --title-font: "Uncial Antiqua", cursive;
+  --user-message-bg: #3c3a59;
+  --model-message-bg: #24223d;
+  --border-color: #63608a;
+  --accent-color: #d8b8ff;
+  --accent-hover-color: #e8d0ff;
+}
+/* --- Celestial OLED Motion --- */
+body[data-theme="celestial-oled-motion"] {
+  --background-color: #000000;
+  --sidebar-color: #000000;
+  --text-color: #d8d8e8;
+  --text-secondary-color: #8c8ca0;
+  --primary-font: "Merriweather", serif;
+  --title-font: "Uncial Antiqua", cursive;
+  --user-message-bg: #1a1a2a;
+  --model-message-bg: #050510;
+  --border-color: #63608a;
+  --accent-color: #d8b8ff;
+  --accent-hover-color: #e8d0ff;
+}
 @keyframes move-stars {
   from { background-position: 0 0; }
   to { background-position: -10000px 5000px; }
@@ -1031,7 +1062,34 @@ body[data-theme="celestial-oled"] {
   background-color: var(--background-color);
   animation: move-stars 200s linear infinite;
 }
-body[data-theme="celestial"] .message.model {
+body[data-theme="celestial-motion"],
+body[data-theme="celestial-oled-motion"] {
+  background-color: var(--background-color);
+  overflow: hidden; /* Prevent scrolling if theme causes jitter */
+}
+body[data-theme="celestial-motion"]::before,
+body[data-theme="celestial-oled-motion"]::before {
+  content: "";
+  position: fixed;
+  top: -150%;
+  left: -150%;
+  right: -150%;
+  bottom: -150%;
+  z-index: -1;
+  background-image: 
+    url('https://www.transparenttextures.com/patterns/stardust.png'), 
+    url('https://www.transparenttextures.com/patterns/stardust.png');
+  /* Parallax: Deep layer moves at 1/2 speed of front layer */
+  background-position: 
+    calc(50% + var(--gx)) calc(50% + var(--gy)),
+    calc(50% + var(--gx) * 0.5) calc(50% + var(--gy) * 0.5);
+  background-size: 600px 600px, 1200px 1200px;
+  background-repeat: repeat;
+  pointer-events: none;
+}
+body[data-theme="celestial"] .message.model,
+body[data-theme="celestial-motion"] .message.model,
+body[data-theme="celestial-oled-motion"] .message.model {
   box-shadow: 0 0 15px rgba(216, 184, 255, 0.15);
 }
 

@@ -129,6 +129,7 @@ import {
   contextManager,
   contextHeader,
   renderLogbookTree,
+  initGyroscope,
 } from './ui';
 import {
   addUserContext,
@@ -1639,6 +1640,7 @@ async function initApp() {
 
       setupEventListeners();
       showWelcomeModalIfNeeded();
+      initGyroscope();
   } catch (err) {
       console.error("Fatal error during application initialization:", err);
       document.body.innerHTML = `<div style="color: white; padding: 2rem; text-align: center; font-family: sans-serif;">

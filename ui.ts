@@ -653,3 +653,92 @@ export function updateCombatTracker(enemies: { name: string, status: string }[])
   combatTracker.classList.remove('hidden');
   combatTracker.classList.add('expanded');
 }
+
+let targetGX = 0;
+let targetGY = 0;
+let currentGX = 0;
+let currentGY = 0;
+
+/**
+ * Initializes the gyroscope listener for motion-based themes.
+ * Handles iOS permission requirements by waiting for a user interaction.
+ */
+export function initGyroscope() {
+  if (typeof (DeviceMotionEvent as any).requestPermission === 'function') {
+    // iOS 13+ requires a user-initiated permission request
+    const requestMotionPermission = () => {
+      (DeviceMotionEvent as any).requestPermission()
+        .then((response: string) => {
+          if (response === 'granted') {
+            startTracking();
+          }
+        })
+        .catch(console.error)
+        .finally(() => {
+          document.removeEventListener('click', requestMotionPermission);
+          document.removeEventListener('touchstart', requestMotionPermission);
+        });
+    };
+    document.addEventListener('click', requestMotionPermission);
+    document.addEventListener('touchstart', requestMotionPermission);
+  } else {
+    // Android / Non-iOS
+    startTracking();
+  }
+}
+
+function startTracking() {
+  // Use 'devicemotion' for raw rotation rates (immune to gimbal lock flips)
+  window.addEventListener('devicemotion', handleMotion);
+  requestAnimationFrame(smoothMotionLoop);
+}
+
+function handleMotion(event: DeviceMotionEvent) {
+  const rotation = event.rotationRate;
+  if (!rotation) return;
+
+  // Raw rotation rates (Degrees per second)
+  const alpha = rotation.alpha || 0; // Steering-wheel tilt (Roll Z)
+  const beta = rotation.beta || 0;   // Vertical nod (Pitch X)
+  const gamma = rotation.gamma || 0; // Compass turn (Yaw Y)
+
+  // Calibrate sensitivity
+  // Vertical move sensitivity (Higher to feel more responsive)
+  const vSens = 1.2;
+  // Horizontal move sensitivity
+  const hSens = 0.8;
+
+  // 1. Vertical Logic: 
+  // If phone tilts UP (beta > 0), stars should move UP.
+  // In CSS, background-position Y must decrease to move image up.
+  targetGY -= (beta * vSens);
+
+  // 2. Horizontal Logic:
+  // Combine Compass Turn (Gamma) and Steering Wheel Tilt (Alpha)
+  // This ensures the stars follow you whether you turn your body or just tilt your wrist.
+  // Turn Right (Gamma > 0) -> Stars Right (GX +)
+  // Tilt Right (Alpha < 0) -> Stars Right (GX +)
+  const combinedHorizontal = (gamma * hSens) - (alpha * hSens);
+  
+  targetGX += combinedHorizontal;
+
+  // Use a slightly higher threshold for the vertical axis to prevent the "drift" 
+  // you mentioned when just moving the phone up and down slightly.
+  const noiseThreshold = 0.15;
+  if (Math.abs(beta) < noiseThreshold) {
+    // Optionally stabilize if movement is too small
+  }
+}
+
+function smoothMotionLoop() {
+  // Inertial smoothing
+  const inertia = 0.12; 
+  currentGX += (targetGX - currentGX) * inertia;
+  currentGY += (targetGY - currentGY) * inertia;
+
+  const root = document.documentElement;
+  root.style.setProperty('--gx', `${currentGX}px`);
+  root.style.setProperty('--gy', `${currentGY}px`);
+
+  requestAnimationFrame(smoothMotionLoop);
+}
